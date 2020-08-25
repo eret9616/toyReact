@@ -16,8 +16,6 @@ class TextWrapper{
     constructor(content){
         this.root = document.createTextNode(content)
     }
-    
-
 }
 
 export class Component{
@@ -43,6 +41,8 @@ export class Component{
 
 export function createElement(type,attributes,...children){
 
+    debugger
+
     let e;
 
     if(typeof type === 'string'){
@@ -54,34 +54,47 @@ export function createElement(type,attributes,...children){
     }
 
 
+    debugger
 
     for(let p in attributes){
         e.setAttribute(p,attributes[p])
     }
 
 
+    debugger
+
     let insertChildren = (children)=>{   
+
+    debugger
+
         for(let child of children){
             if(typeof child === 'string'){
                 child = new TextWrapper(child);
             }
+            debugger
             
             if((typeof child === 'object') && (child instanceof Array)){
+    debugger
+
                 insertChildren(child);
             }else{
+    debugger
+
                 e.appendChild(child);   
             }
         }
     }
+
+    debugger
 
     insertChildren(children);
 
     return e;
 }
 
+
+// 全局的render方法 window.render （ 两个参数，第二个参数是要被挂载的节点，第一个参数是component
 export function render(component,parentElement){
-
-
     parentElement.appendChild(component.root);
 }
 

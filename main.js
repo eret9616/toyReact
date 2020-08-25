@@ -9,12 +9,15 @@ class MyComponent extends Component{
    }
 }
 
+debugger
 
 
-render(<MyComponent id="a" class="c">
+// 全局暴露的render方法
+  // jsx <MyComponent/>会被babel转为函数createElement，最终变为 render( createElement(x,{},..), body )
+render(<MyComponent id="a" class="c"> 
         <div>
          asdiu
         </div>    
         <div></div>
         <div></div>
-    </MyComponent>,document.body)
+    </MyComponent>,document.body) // ==> document.body.appenChild(component.root)
