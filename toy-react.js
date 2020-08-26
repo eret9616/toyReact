@@ -18,7 +18,12 @@ class ElementWrapper{
 
         }else{
 
-            this.root.setAttribute(name,value)
+
+            if(name === 'className'){
+                this.root.setAttribute('class',value)
+            }else{
+                this.root.setAttribute(name,value)
+            }
         }
     }
     appendChild(component){
@@ -61,14 +66,25 @@ export class Component{
     appendChild(component){
         this.children.push(component)
     }
+
     [RENDER_TO_DOM](range){
         this._range = range;
         this.render()[RENDER_TO_DOM](range); // 会递归直到找到真正的dom节点
     }
 
     rerender(){
-        this._range.deleteContents();
-        this[RENDER_TO_DOM](this._range);
+        // 保存老的range
+        let oldRange = this._range
+
+        // 设置新的range，放在老的range的start的位置
+        let range = document.createRange();
+        range.setStart(this._range.startContainer,this._range.startOffset)
+        range.setEnd(this._range.startContainer,this._range.startOffset) // 起点终点一样
+        this[RENDER_TO_DOM](range);
+        
+        // 完成插入后，把老的range的start挪到插入的内容之后，再把内容删除
+        oldRange.setStart(range.endContainer,range.endOffset)
+        oldRange.deleteContents();
     }
 
     setState(newState){
@@ -126,6 +142,12 @@ export function createElement(type,attributes,...children){
             if(typeof child === 'string'){
                 child = new TextWrapper(child);
             }
+            
+
+            if(child === null){
+               continue;
+            }
+
             
             if((typeof child === 'object') && (child instanceof Array)){
 
