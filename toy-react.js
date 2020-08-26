@@ -1,20 +1,40 @@
+// 16:05
+
+const RENDER_TO_DOM = Symbol('render to dom');
+
+
+// 包装类，用于给元素加一层wrapper， 为了实现setAttribute方法 和 appendChild方法
 class ElementWrapper{
     constructor(type){
         // 把我们创建的实体DOM放到一个属性上
-        this.root = document.createElement(type);
-
+        this.root = document.createElement(type);     // 真实的dom对象
     }
     setAttribute(name,value){
         this.root.setAttribute(name,value)
     }
     appendChild(component){
-        this.root.appendChild(component.root)
+
+        let range = document.createRange()
+        range.setStart(this.root,this.root.childNodes.length); // 最后一个子元素
+        range.setEnd(this.root,this.root.childNodes.length);    
+        component[RENDER_TO_DOM](range)
     }
+
+    [RENDER_TO_DOM](range){
+        range.deleteContents();
+        range.insertNode(this.root)
+    }
+
 }
 
+// 包装类，给文本节点添加一个wrapper
 class TextWrapper{
     constructor(content){
-        this.root = document.createTextNode(content)
+        this.root = document.createTextNode(content) // 真实的DOM对象
+    }
+    [RENDER_TO_DOM](range){
+        range.deleteContents();
+        range.insertNode(this.root)
     }
 }
 
@@ -22,7 +42,7 @@ export class Component{
     constructor(){
         this.props = Object.create(null)
         this.children = [];
-        this._root = null;
+        this._root = null; // 
     }
     setAttribute(name,value){
         this.props[name] = value;
@@ -30,18 +50,15 @@ export class Component{
     appendChild(component){
         this.children.push(component)
     }
-    get root(){
-         if(!this._root){
-             this._root = this.render().root; // 如果是Component会发生递归直到ElementWrapper或TextWrapper
-         } 
-         return this._root;
+    [RENDER_TO_DOM](range){
+        this.render()[RENDER_TO_DOM](range); // 会递归直到找到真正的dom节点
     }
 }
 
 
+// Component的render方法最终会调用createElement 返回 createElement的返回值
 export function createElement(type,attributes,...children){
-
-    debugger
+    // createElement 返回的是一个wrapper对象，Component或者ElementWrapper
 
     let e;
 
@@ -54,38 +71,31 @@ export function createElement(type,attributes,...children){
     }
 
 
-    debugger
 
     for(let p in attributes){
         e.setAttribute(p,attributes[p])
     }
 
 
-    debugger
 
     let insertChildren = (children)=>{   
 
-    debugger
 
         for(let child of children){
             if(typeof child === 'string'){
                 child = new TextWrapper(child);
             }
-            debugger
             
             if((typeof child === 'object') && (child instanceof Array)){
-    debugger
 
                 insertChildren(child);
             }else{
-    debugger
 
                 e.appendChild(child);   
             }
         }
     }
 
-    debugger
 
     insertChildren(children);
 
@@ -95,6 +105,13 @@ export function createElement(type,attributes,...children){
 
 // 全局的render方法 window.render （ 两个参数，第二个参数是要被挂载的节点，第一个参数是component
 export function render(component,parentElement){
-    parentElement.appendChild(component.root);
-}
 
+    // 先创建range
+    let range = document.createRange()
+    range.setStart(parentElement,0); // 0th child of parentElement
+    range.setEnd(parentElement,parentElement.childNodes.length);
+    range.deleteContents(); // 删除了parentElement之间的内容，
+
+
+    component[RENDER_TO_DOM](range) // 调用了component的 RENDER_TO_DOM 方法, 并传入range
+}

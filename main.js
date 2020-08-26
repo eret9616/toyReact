@@ -1,15 +1,26 @@
 import { render,createElement,Component } from './toy-react.js';
 
 class MyComponent extends Component{
+
+
+    constructor(){
+        super();//调用component构造函数
+        this.state = {
+            a:1,
+            b:2
+        }
+
+    }
+
    render(){
        return (<div>
            <h1>my Component</h1>
+       <span>{this.state.a.toString()}</span>
            {this.children}
        </div>)
    }
 }
 
-debugger
 
 
 // 全局暴露的render方法
