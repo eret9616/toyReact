@@ -10,7 +10,16 @@ class ElementWrapper{
         this.root = document.createElement(type);     // 真实的dom对象
     }
     setAttribute(name,value){
-        this.root.setAttribute(name,value)
+
+                     // 表示所有字符
+        if(name.match(/^on([\s\S]+)$/)){
+            //                                     第一个字母onxx都改成小写的
+            this.root.addEventListener(RegExp.$1.replace(/^[\s\S]/,c=>c.toLowerCase()),value)
+
+        }else{
+
+            this.root.setAttribute(name,value)
+        }
     }
     appendChild(component){
 
@@ -43,6 +52,8 @@ export class Component{
         this.props = Object.create(null)
         this.children = [];
         this._root = null; // 
+
+        this._range = null;
     }
     setAttribute(name,value){
         this.props[name] = value;
@@ -51,7 +62,13 @@ export class Component{
         this.children.push(component)
     }
     [RENDER_TO_DOM](range){
+        this._range = range;
         this.render()[RENDER_TO_DOM](range); // 会递归直到找到真正的dom节点
+    }
+
+    rerender(){
+        this._range.deleteContents();
+        this[RENDER_TO_DOM](this._range);
     }
 }
 
