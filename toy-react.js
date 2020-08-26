@@ -2,63 +2,16 @@
 
 const RENDER_TO_DOM = Symbol('render to dom');
 
-
-// 包装类，用于给元素加一层wrapper， 为了实现setAttribute方法 和 appendChild方法
-class ElementWrapper{
-    constructor(type){
-        // 把我们创建的实体DOM放到一个属性上
-        this.root = document.createElement(type);     // 真实的dom对象
-    }
-    setAttribute(name,value){
-
-                     // 表示所有字符
-        if(name.match(/^on([\s\S]+)$/)){
-            //                                     第一个字母onxx都改成小写的
-            this.root.addEventListener(RegExp.$1.replace(/^[\s\S]/,c=>c.toLowerCase()),value)
-
-        }else{
-
-
-            if(name === 'className'){
-                this.root.setAttribute('class',value)
-            }else{
-                this.root.setAttribute(name,value)
-            }
-        }
-    }
-    appendChild(component){
-
-        let range = document.createRange()
-        range.setStart(this.root,this.root.childNodes.length); // 最后一个子元素
-        range.setEnd(this.root,this.root.childNodes.length);    
-        component[RENDER_TO_DOM](range)
-    }
-
-    [RENDER_TO_DOM](range){
-        range.deleteContents();
-        range.insertNode(this.root)
-    }
-
-}
-
-// 包装类，给文本节点添加一个wrapper
-class TextWrapper{
-    constructor(content){
-        this.root = document.createTextNode(content) // 真实的DOM对象
-    }
-    [RENDER_TO_DOM](range){
-        range.deleteContents();
-        range.insertNode(this.root)
-    }
-}
-
 export class Component{
     constructor(){
+
         this.props = Object.create(null)
         this.children = [];
         this._root = null; // 
 
         this._range = null;
+
+
     }
     setAttribute(name,value){
         this.props[name] = value;
@@ -66,6 +19,12 @@ export class Component{
     appendChild(component){
         this.children.push(component)
     }
+
+
+    get vdom(){
+        return this.render().vdom;
+    }
+
 
     [RENDER_TO_DOM](range){
         this._range = range;
@@ -111,6 +70,85 @@ export class Component{
         this.rerender();
     }
 }
+
+// 包装类，用于给元素加一层wrapper， 为了实现setAttribute方法 和 appendChild方法
+class ElementWrapper extends Component{
+
+    constructor(type){
+        super(type);
+
+        this.type = type;
+        // 把我们创建的实体DOM放到一个属性上
+        this.root = document.createElement(type);     // 真实的dom对象
+    }
+
+    // setAttribute(name,value){
+
+    //                  // 表示所有字符
+    //     if(name.match(/^on([\s\S]+)$/)){
+    //         //                                     第一个字母onxx都改成小写的
+    //         this.root.addEventListener(RegExp.$1.replace(/^[\s\S]/,c=>c.toLowerCase()),value)
+
+    //     }else{
+
+
+    //         if(name === 'className'){
+    //             this.root.setAttribute('class',value)
+    //         }else{
+    //             this.root.setAttribute(name,value)
+    //         }
+    //     }
+    // }
+    // appendChild(component){
+
+    //     let range = document.createRange()
+    //     range.setStart(this.root,this.root.childNodes.length); // 最后一个子元素
+    //     range.setEnd(this.root,this.root.childNodes.length);    
+    //     component[RENDER_TO_DOM](range)
+    // }
+        
+
+    get vdom(){
+        // 虚拟dom包含三样东西 type、props、children
+        return {
+            type:this.type,
+            props:this.props,
+            children:this.children.map((child=>child.vdom))
+        }
+    }
+
+
+
+    [RENDER_TO_DOM](range){
+        range.deleteContents();
+        range.insertNode(this.root)
+    }
+
+}
+
+// 包装类，给文本节点添加一个wrapper
+class TextWrapper extends Component{
+
+    constructor(content){
+        super(content)
+        this.content = content;
+        this.root = document.createTextNode(content) // 真实的DOM对象
+    }
+
+    get vdom(){
+        return {
+            type:'#text',
+            content:this.content
+        }
+    }
+
+    [RENDER_TO_DOM](range){
+        range.deleteContents();
+        range.insertNode(this.root)
+    }
+}
+
+
 
 
 // Component的render方法最终会调用createElement 返回 createElement的返回值
